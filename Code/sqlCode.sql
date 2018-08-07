@@ -128,3 +128,4 @@ select a.TARGET,a.sk_id_curr,bg.* from application_train a inner join
  
  ) as bg on (a.SK_ID_CURR = bg.sk_id_curr) ;
 
+
