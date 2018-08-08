@@ -1,48 +1,34 @@
 setwd('/Users/shitalkat/Workstation/GitHub/Home_Credit_Default_Risk')
 
-source('SharedCode/AllFunctions.R')
+source('/Users/shitalkat/Workstation/GitHub/CC/AllFunctions.R')
 ds=read.csv('Data/application_train_vars_new.csv')
 
+########## Required PreProcessing ##########
+ds$ORGANIZATION_TYPE=NULL
+ds$TARGET=as.factor(sample1$TARGET)
 
-########## N Samples ##########
+########## Train-Test Split ##########
 
-biasColumns=getBiasVariables(ds) 
-biasColumns
+library(caTools)
+set.seed(100)
+split = sample.split(ds$TARGET, SplitRatio = 0.7)
+train = subset(ds, split == TRUE)
+test = subset(ds, split == FALSE)
 
-t=getNSamplesFromPopulation(ds,'TARGET')
-min(t)
-getNSamplesFromPopulation= function(populationDataset,targetVarName, sampleNos = 1)
-{
-  frequencyTable=table(populationDataset[targetVarName])
-  return(frequencyTable)
-}
+########## Oversampling Samples ##########
+library(ROSE)
+table(train$TARGET)
+dim(ds)
+train <- ovun.sample(TARGET~.,data = train,method = "over",N=(197880*2))$data
 
-fold=CreditBureauTarget.target1=CreditBureauTarget[CreditBureauTarget$TARGET==1,] #20368
-CreditBureauTarget.target0=CreditBureauTarget[CreditBureauTarget$TARGET==0,] 
-fold=rbind.data.frame(fold,head(CreditBureauTarget,20368))
+########## Random Forest ##########
 
+model=RunModel_RandomForest(train,'TARGET',20)
+result=Predict_RandomForest(model,test)
 
-table(ds['TARGET'])
-
-
-########## Decision Tree ##########
-
-
-
-
-library(rpart)
-library(rpart.plot)
-regressor = rpart(formula = ds$TARGET~.,
-                  data = ds,
-                  method='class',
-                  control = rpart.control(minsplit = 2))
-summary(regressor)
-regressor
-rpart.plot(regressor)
-result=predict(regressor,fold,type = 'class')
-mergeResult=(cbind.data.frame(result,fold$TARGET))
-
-table(mergeResult)
+result=(cbind.data.frame(result,test$TARGET))
+ModelEvalMeasure_classification(table(result))
 
 
-########## Model Evaluation Measures ##########
+
+
